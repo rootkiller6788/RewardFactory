@@ -1,0 +1,11 @@
+# RewardFactory —— 核心链路零第三方依赖。
+#
+# 不需要 `pip install`，也不需要激活 venv：`python main.py run` 直接可用。
+# 下面这些是**扩展点**，只有要接真实的 RM / Judge / 画图时才需要，
+# 而且它们在核心链路里一律抛 NotImplementedError（见各模块的扩展点说明）。
+#
+# 版本下限来自标准库：`math.sumprod` 自 CPython 3.12 起提供（搜索内层循环用它）。
+#
+# torch>=2.2        # 真实 RM 接入点（providers.py 的 TorchRewardProvider）
+# openai>=1.30      # 真实 LLM Judge 接入点（providers.py 的 LLMJudgeProvider）
+# matplotlib>=3.8   # 把 out/ 里的曲线画成 PNG（visualize.py 的扩展点）

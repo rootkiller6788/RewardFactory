@@ -1,0 +1,232 @@
+{
+  "acceptance": {
+    "max_ece": 0.08,
+    "max_mae_after": 0.2,
+    "min_anchor_items": 60,
+    "min_calibration_gain": 0.05,
+    "min_holdout_pairs": 150,
+    "min_mixture_gain_over_best_single": 0.03,
+    "min_naive_deficit": 0.02,
+    "min_providers": 4,
+    "min_reliability_spread": 0.15,
+    "min_scale_variance_ratio": 3.0,
+    "min_solo_spread": 0.03,
+    "min_uncertainty_lift": 1.05,
+    "min_weight_ci_coverage": 0.6
+  },
+  "aggregate": {
+    "fallback": "equal",
+    "max_provider_sigma": 0.35
+  },
+  "anchors": {
+    "component_sigma": 0.08
+  },
+  "benchmark": {
+    "clean_only": true,
+    "specific_majority": 3
+  },
+  "bootstrap": {
+    "budget": 60,
+    "ci_level": 0.9,
+    "n_resamples": 200,
+    "searcher": "coordinate"
+  },
+  "calibrate": {
+    "clip_hi": 1.0,
+    "clip_lo": 0.0,
+    "method": "isotonic",
+    "min_anchor": 12,
+    "reliability_ceiling": 1.0,
+    "reliability_floor": 0.0,
+    "reliability_slope": 2.0
+  },
+  "expectations": {
+    "bagging_beats_argmax": true,
+    "calibration_improves_agreement": true,
+    "component_decomposition_beats_scalar_mix": true,
+    "direction_detection_changes_agreement": true,
+    "direction_detection_recovers_dead_provider": true,
+    "llm_judge_is_best_single_provider": true,
+    "mixture_beats_best_single": true,
+    "naive_uncalibrated_mix_underperforms_best_single": true,
+    "reward_has_no_scale_offset": true,
+    "safety_weight_is_identifiable": true,
+    "searched_weights_recover_latent_pointwise": true,
+    "uncertainty_is_calibrated": true,
+    "uncertainty_predicts_error_rank": true,
+    "weights_are_reproducible": true
+  },
+  "normalize": {
+    "blind_rho_tol": 0.25,
+    "blind_tol": 0.005,
+    "direction_rho_tol": 0.15,
+    "min_anchor_for_direction": 8
+  },
+  "providers": [
+    {
+      "blind_noise": 0.1,
+      "cost_ms": 0.4,
+      "declared_direction": 1,
+      "family_bias": {},
+      "id": "rule",
+      "invert": false,
+      "kind": "rule",
+      "label": "机械规则（判据内精确、判据外全盲，但判据只覆盖一小片）",
+      "length_bias": 0.0,
+      "note": "确定性。同一输入永远同一输出，所以它的「不可复现」风险为零。代价是它只看得见自己写死的那几条判据。",
+      "scale": "grid3",
+      "sigma": 0.0,
+      "vision": {
+        "correctness": 0.0,
+        "helpfulness": 0.35,
+        "safety": 0.7,
+        "style": 0.0,
+        "task_reward": 0.5
+      }
+    },
+    {
+      "blind_noise": 0.1,
+      "cost_ms": 3.1,
+      "declared_direction": 1,
+      "family_bias": {},
+      "id": "rm_small",
+      "invert": false,
+      "kind": "rm_model",
+      "label": "小奖励模型（只看得见 correctness 一侧，logit 尺度）",
+      "length_bias": 0.0,
+      "note": "尺度是无界的 logit，方差比别的 provider 大一个量级。",
+      "scale": "logit",
+      "sigma": 0.1,
+      "vision": {
+        "correctness": 0.8,
+        "helpfulness": 0.45,
+        "safety": 0.0,
+        "style": 0.0,
+        "task_reward": 0.35
+      }
+    },
+    {
+      "blind_noise": 0.09,
+      "cost_ms": 18.0,
+      "declared_direction": 1,
+      "family_bias": {},
+      "id": "rm_large",
+      "invert": false,
+      "kind": "rm_model",
+      "label": "大奖励模型（覆盖最广，但把「长」读成「好」、且**看不见 safety**）",
+      "length_bias": 0.35,
+      "note": "sigmoid 饱和，原始分被压在 (0.2, 0.8) 里，方差最小。「长 = 好」是非仿射偏差，校准修不掉。",
+      "scale": "saturated",
+      "sigma": 0.07,
+      "vision": {
+        "correctness": 0.78,
+        "helpfulness": 0.72,
+        "safety": 0.0,
+        "style": 0.7,
+        "task_reward": 0.68
+      }
+    },
+    {
+      "blind_noise": 0.12,
+      "cost_ms": 240.0,
+      "declared_direction": 1,
+      "family_bias": {
+        "writing": 0.12
+      },
+      "id": "llm_judge",
+      "invert": false,
+      "kind": "llm_judge",
+      "label": "LLM 裁判（覆盖最全，噪声最大，偏爱写作类）",
+      "length_bias": 0.0,
+      "note": "整数 1..10 的格点尺度，且把「文风偏好」混进了风格分。",
+      "scale": "ordinal10",
+      "sigma": 0.14,
+      "vision": {
+        "correctness": 0.62,
+        "helpfulness": 0.66,
+        "safety": 0.7,
+        "style": 0.58,
+        "task_reward": 0.6
+      }
+    },
+    {
+      "blind_noise": 0.12,
+      "cost_ms": 2.6,
+      "declared_direction": 1,
+      "family_bias": {},
+      "id": "rm_legacy",
+      "invert": true,
+      "kind": "rm_model",
+      "label": "历史遗留 RM（**接线接反了**：分数越高越差）",
+      "length_bias": 0.0,
+      "note": "它**自称**分数越高越好（declared_direction=1），实际相反。方向只能测出来。",
+      "scale": "logit",
+      "sigma": 0.12,
+      "vision": {
+        "correctness": 0.65,
+        "helpfulness": 0.5,
+        "safety": 0.0,
+        "style": 0.0,
+        "task_reward": 0.0
+      }
+    }
+  ],
+  "search": {
+    "budget": 240,
+    "coordinate_moves": [
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "den": 8,
+    "forward_taus": [
+      0.1,
+      0.2,
+      0.35,
+      0.5
+    ],
+    "searchers": [
+      "grid",
+      "random",
+      "coordinate",
+      "forward"
+    ],
+    "space": "simplex",
+    "start": "uniform"
+  },
+  "seed": "rewardfactory",
+  "uncertainty": {
+    "ece_bins": 8,
+    "floor": 0.01,
+    "include_weight_term": true,
+    "tie_kappa": 1.0
+  },
+  "world": {
+    "anchor_prompts": 20,
+    "holdout_prompts": 40,
+    "label_noise": 0.12,
+    "latent_weights": {
+      "correctness": 0.34,
+      "helpfulness": 0.2,
+      "safety": 0.16,
+      "style": 0.1,
+      "task_reward": 0.2
+    },
+    "length_base": 60.0,
+    "length_help": 40.0,
+    "length_sigma": 12.0,
+    "length_verbosity": 30.0,
+    "max_tokens": 400,
+    "min_tokens": 20,
+    "n_candidates": 4,
+    "n_prompts": 120,
+    "residual_sigma": 0.06,
+    "safety_violation_drop": 0.55,
+    "safety_violation_prob": 0.06,
+    "tie_band": 0.02,
+    "tie_declare_prob": 0.7,
+    "train_prompts": 60
+  }
+}
