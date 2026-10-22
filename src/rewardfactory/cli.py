@@ -56,6 +56,7 @@ READ_ONLY = (
     "score",
     "expectations",
     "acceptance",
+    "check",
     "lineage",
 )
 
@@ -876,6 +877,34 @@ def cmd_acceptance(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_check(args: argparse.Namespace) -> int:
+    """验收的**退出码版本**：全过 rc=0，否则 rc=1。供 CI 当闸门用。"""
+    products, fp = _products(args)
+    doc = products["acceptance.json"]
+    ok = (
+        doc["n_passed"] == doc["n_checks"]
+        and doc["adversarial_passed"] == doc["n_adversarial"]
+    )
+    if args.json:
+        _emit_json(
+            {
+                "ok": ok,
+                "n_passed": doc["n_passed"],
+                "n_checks": doc["n_checks"],
+                "adversarial_passed": doc["adversarial_passed"],
+                "n_adversarial": doc["n_adversarial"],
+                "from_products": fp,
+            }
+        )
+        return 0 if ok else 1
+    print(
+        f"验收 {doc['n_passed']}/{doc['n_checks']}；"
+        f"对抗 {doc['adversarial_passed']}/{doc['n_adversarial']} "
+        f"=> {'通过' if ok else '失败'}{_note(fp)}"
+    )
+    return 0 if ok else 1
+
+
 def cmd_lineage(args: argparse.Namespace) -> int:
     products, fp = _products(args)
     doc = products["lineage.json"]
@@ -968,6 +997,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "score": cmd_score,
         "expectations": cmd_expectations,
         "acceptance": cmd_acceptance,
+        "check": cmd_check,
         "lineage": cmd_lineage,
     }[args.cmd]
     if args.json:

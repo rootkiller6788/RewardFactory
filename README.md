@@ -226,7 +226,7 @@ python main.py expectations   # 14 条设计期望 vs 实测（5 条被推翻）
 
 **2 个写命令**：`run`（16 个产物）/ `visualize`（`report.html`）。
 
-**13 个只读命令**（全部从产物重建，不重跑流水线；产物不全时才在内存里跑一次并明确提示）：
+**14 个只读命令**（全部从产物重建，不重跑流水线；产物不全时才在内存里跑一次并明确提示）：
 
 | 命令 | 回答的问题 |
 | --- | --- |
@@ -242,10 +242,11 @@ python main.py expectations   # 14 条设计期望 vs 实测（5 条被推翻）
 | `score <cid>` / `--text` | 单条打分：`--candidate` 从产物取，`--text` 走 sha256 派生 latent 的 stub |
 | `expectations` | 14 条设计期望 vs 实测 |
 | `acceptance` | 验收清单 + 对抗用例 |
+| `check` | 验收的退出码版本：全过 rc=0，否则 rc=1（CI 闸门） |
 | `lineage` | 血缘 DAG（`--dot` 输出 Graphviz） |
 
 **`--json` 只输出 JSON**：说明文字被吞掉，`_emit_json` 直接写真正的 stdout。所以
-`python main.py benchmark --json | jq` 是能用的。13 个只读命令全部支持。
+`python main.py benchmark --json | jq` 是能用的。14 个只读命令全部支持。
 
 ## A.5 产物（`out/`，17 个文件）
 
@@ -442,8 +443,8 @@ README 第八节的两条验收标准，逐条落到具体数字：
 
 | 检查 | 结果 |
 | --- | --- |
-| 13 个只读命令跑完 `out/` | **逐位不变**（md5 指纹） |
-| 13 个只读命令的 `--json` | 全部 `json.loads` 直接成功（说明文字被吞掉） |
+| 14 个只读命令跑完 `out/` | **逐位不变**（md5 指纹） |
+| 14 个只读命令的 `--json` | 全部 `json.loads` 直接成功（说明文字被吞掉） |
 | 两次 `main.py run` | 17 个文件里**只有 `version.json` 的 `created_at` 不同** |
 | 两次 `main.py visualize` | `report.html` **逐位相同** |
 | `report.html` 自包含 | 无 `http://` / `src=` / `@import` / `<link` / `<script` / `fetch(` / `<img`；4 张内联 SVG 全部能被 `xml.etree` 解析 |
