@@ -278,7 +278,9 @@ python main.py expectations   # 14 条设计期望 vs 实测（5 条被推翻）
 不承担判据：
 
 - `test_import.py`：`src/rewardfactory/` 下每个模块（含子包）都能干净 import；
-- `test_cli_contract.py`：`--help` 与每个子命令的 `--help` 都 rc=0。
+- `test_cli_contract.py`：`--help` 与每个子命令的 `--help` 都 rc=0，`check` 必须 rc=0；
+- `test_json_contract.py`：`--json` 的 stdout 恰好是一段可解析的 UTF-8 JSON；
+- `test_scoring.py`：同文本两次 `score --text` 逐位一致、不同文本给出不同分数。
 
 pytest 只回答「接线有没有断」，不回答「结果对不对」；后者由 `acceptance.py` 负责。
 
