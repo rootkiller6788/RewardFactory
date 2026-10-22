@@ -325,7 +325,11 @@ def cmd_summary(args: argparse.Namespace) -> int:
         f"  提升：组合 - 最好单源 = {_pct(float(mix['agreement_truth']) - float(bs['agreement_truth']))}"
         f"（同一口径）；不校准等权平均 {_pct(naive['agreement_truth'])}"
     )
-    print(f"  距注入真值权重的上界还差 {_pct(float(oracle['agreement_truth']) - float(mix['agreement_truth']))}")
+    gap = float(mix["agreement_truth"]) - float(oracle["agreement_truth"])
+    if gap >= 0:
+        print(f"  已超过注入真值权重的上界 {_pct(gap)}（可辨识性解释见 README B.5）")
+    else:
+        print(f"  距注入真值权重的上界还差 {_pct(-gap)}")
     print()
     print(f"  误差分解：共有（不可约）{bench['decomposition']['shared']} 对；"
           f"混合器特有 {bench['decomposition']['mixture_specific']} 对")
