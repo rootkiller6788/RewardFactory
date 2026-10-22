@@ -155,7 +155,7 @@ L4-rewardfactory/
 │   ├── report.py                   markdown 报告
 │   ├── visualize.py                自包含 HTML（零外部资源，4 张内联 SVG）
 │   └── cli.py                      2 写 + 13 只读子命令
-├── tests/                          空 —— 见 A.6
+├── tests/                          入口级冒烟（见 A.6）
 ├── main.py                         入口（零安装：把 src/ 塞进 sys.path）
 └── out/                            产物（见 A.5）
 ```
@@ -273,8 +273,13 @@ python main.py expectations   # 14 条设计期望 vs 实测（5 条被推翻）
 
 ## A.6 关于 `tests/`
 
-本工作区的约定是**不写 pytest，把验证放进流水线自身的运行时核对**。所以这里的
-`tests/` 是空的，质量闸门是 `acceptance.py`：
+质量闸门是 `acceptance.py`（17 条门槛 + 52 条对抗用例）。`tests/` 只放**入口级冒烟**，
+不承担判据：
+
+- `test_import.py`：`src/rewardfactory/` 下每个模块（含子包）都能干净 import；
+- `test_cli_contract.py`：`--help` 与每个子命令的 `--help` 都 rc=0。
+
+pytest 只回答「接线有没有断」，不回答「结果对不对」；后者由 `acceptance.py` 负责。
 
 - **`main.py acceptance`** 一次跑两类东西：
   - **17 条门槛**核对这一批结果：组合增益、CI 覆盖率、校准增益、MAE、可靠性离散度、
