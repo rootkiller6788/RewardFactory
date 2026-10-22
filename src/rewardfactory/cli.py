@@ -79,8 +79,28 @@ def _emit_json(payload: Any) -> None:
     `summary --json | jq .` 必须能工作 —— 这要求 stdout 上**恰好**是一段 JSON。
     如果命令里还有 `print("正在跑…")`，管道那一头会拿到一段解析不了的文本。
     """
-    _REAL_STDOUT.write(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n")
-    _REAL_STDOUT.flush()
+    text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    buf = getattr(_REAL_STDOUT, "buffer", None)
+    if buf is not None:
+        # 显式写 UTF-8：管道那一头的 jq / json.loads 不该受本机代码页影响。
+        buf.write(text.encode("utf-8"))
+        buf.flush()
+    else:
+        _REAL_STDOUT.write(text)
+        _REAL_STDOUT.flush()
+
+
+def _configure_console() -> None:
+    """让 Windows 默认的 GBK 控制台不会因为排版符号直接崩掉。
+
+    不强制改成 UTF-8：老式 cmd 的代码页不会跟着变，那样中文反而会乱码。
+    保留当前编码、只把无法编码的字符替换掉，是这里最稳的做法。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
 
 
 class _quiet_prose:
@@ -302,7 +322,7 @@ def cmd_summary(args: argparse.Namespace) -> int:
     print()
     print("  主结论看「对干净标签」一列：对 `sign(Δq)` 算，平局算半分 —— 没有人类噪声，也不罚谨慎。")
     print(
-        f"  提升：组合 − 最好单源 = {_pct(float(mix['agreement_truth']) - float(bs['agreement_truth']))}"
+        f"  提升：组合 - 最好单源 = {_pct(float(mix['agreement_truth']) - float(bs['agreement_truth']))}"
         f"（同一口径）；不校准等权平均 {_pct(naive['agreement_truth'])}"
     )
     print(f"  距注入真值权重的上界还差 {_pct(float(oracle['agreement_truth']) - float(mix['agreement_truth']))}")
@@ -454,7 +474,7 @@ def cmd_search(args: argparse.Namespace) -> int:
         _emit_json(doc)
         return 0
     print(
-        f"四个搜索器 · 预算 {doc['budget']} · 分母 1/{doc['den']} ⇒ "
+        f"四个搜索器 · 预算 {doc['budget']} · 分母 1/{doc['den']} => "
         f"单纯形上 {doc['n_lattice']} 个格点{_note(fp)}"
     )
     print()
@@ -546,9 +566,9 @@ def cmd_benchmark(args: argparse.Namespace) -> int:
     )
     print()
     print(f"  不确定度：ECE {_f(doc['ece'], 4)}（误差已去偏）；u 均值 {_f(doc['uncertainty_mean'], 4)}")
-    print(f"           u 与 |R−真值| 的 Spearman {_f(doc['uncertainty_mae_correlation'], 4)}；"
+    print(f"           u 与 |R-真值| 的 Spearman {_f(doc['uncertainty_mae_correlation'], 4)}；"
           f"四分位提升 {_f(doc['uncertainty_lift'], 3)}（最高四分位 u 的 mean|误差| ÷ 最低四分位的）")
-    print(f"  尺度错位：mean(R − quality) = {_f(doc['reward_bias'], 4)}"
+    print(f"  尺度错位：mean(R - quality) = {_f(doc['reward_bias'], 4)}"
           f"（reward 只有序意义，常数错位要靠校准修，不归不确定度管）")
     if doc.get("per_family"):
         print()
@@ -611,7 +631,7 @@ def cmd_pairs(args: argparse.Namespace) -> int:
                     (_f(r["u_pair"], 3), 8),
                     (r["label_name"], 5),
                     (label_name(int(r["pred"])), 5),
-                    ("✓" if r["correct"] == "1" else "✗", 3),
+                    ("√" if r["correct"] == "1" else "×", 3),
                     ("是" if r["noisy"] == "1" else "", 5),
                 ],
                 right=(2, 3, 4),
@@ -838,7 +858,7 @@ def cmd_acceptance(args: argparse.Namespace) -> int:
                     (c["comparator"], 10),
                     (_f(c["threshold"], 4), 10),
                     (_f(c["observed"], 4), 12),
-                    ("✓" if c["passed"] else "✗", 5),
+                    ("√" if c["passed"] else "×", 5),
                 ],
                 right=(2, 3),
             )
@@ -846,7 +866,7 @@ def cmd_acceptance(args: argparse.Namespace) -> int:
     print()
     print("  对抗用例（**不读产物**，产物过期时仍能跑）：")
     for a in doc["adversarial"]:
-        print(f"    [{'✓' if a['passed'] else '✗'}] {a['name']}")
+        print(f"    [{'√' if a['passed'] else '×'}] {a['name']}")
         if a["detail"]:
             print(f"        {a['detail']}")
     return 0
@@ -927,6 +947,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    _configure_console()
     args = build_parser().parse_args(argv)
     fn = {
         "run": cmd_run,
