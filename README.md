@@ -1,5 +1,7 @@
 # RewardFactory
 
+[![CI](https://github.com/rootkiller6788/RewardFactory/actions/workflows/ci.yml/badge.svg)](https://github.com/rootkiller6788/RewardFactory/actions/workflows/ci.yml)
+
 > 来源：factory-everything/factory-everything-项目总表.md ｜ 板块：factory-everything · L4 ｜ 落地约束：4060 8G 单机可跑
 
 ## 一、条目信息（原始字段，完整保留）
