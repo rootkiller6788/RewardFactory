@@ -1,0 +1,2 @@
+# 开发/测试依赖。核心链路仍然零第三方依赖（见 requirements.txt）。
+pytest>=8.0
