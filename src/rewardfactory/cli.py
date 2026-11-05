@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from . import __version__
 from .aggregate import normalize_w
 from .config import load_config
 from .pipeline import (
@@ -951,6 +952,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="rewardfactory",
         description="RewardFactory：多来源 Reward 的校准、组合与权重搜索 —— Objective Function Factory。",
     )
+    p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument("--config", default=DEFAULT_CONFIG, help=f"配置文件（默认 {DEFAULT_CONFIG}）")
     p.add_argument("--out", default="out", help="产物目录（默认 out）")
     p.add_argument("--json", action="store_true", help="只输出 JSON")
