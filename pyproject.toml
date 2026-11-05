@@ -17,6 +17,9 @@ plot = ["matplotlib>=3.8"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+rewardfactory = ["py.typed"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 addopts = "-q"
